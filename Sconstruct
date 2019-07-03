@@ -1,4 +1,107 @@
-# Use ./bin for building to keep the source tree clean
-VariantDir('bin', 'src', duplicate=0)
-# We say ./bin/X but we mean ./src/X, thanks to the line above
-SConscript('bin/SConscript')
+
+import os
+
+env = Environment(ENV = os.environ)
+#env = Environment()
+
+def buildit( module ):
+    global env
+
+    if os.path.exists( 'SConstruct' ):
+        env.SConscript( module + '/SConscript',
+                            variant_dir=module + '/obj',
+                            duplicate=0 )
+    else:
+        env.SConscript( module + '/SConscript',
+                            variant_dir='../' + module + '/obj',
+                            duplicate=0 )
+    return
+
+
+def BuildModules( modules ):
+    for mm in modules:
+        buildit(mm)
+
+env.buildit = buildit
+env.BuildModules = BuildModules
+
+
+def generate_arm(source, target, env, for_signature):
+    return '$OBJCOPY -O binary %s %s'%(source[0], target[0])
+
+env.Append(BUILDERS={
+    'Objcopy': Builder(
+               generator=generate_arm,
+               suffix='.bin',
+               src_suffix='.elf')})
+
+
+env['AR'] = 'arm-none-eabi-ar'
+env['AS'] = 'arm-none-eabi-as'
+env['CC'] = 'arm-none-eabi-gcc'
+env['CXX'] = 'arm-none-eabi-g++'
+env['RANLIB'] = 'arm-none-eabi-ranlib'
+env['OBJCOPY'] = 'arm-none-eabi-objcopy'
+
+env['PROGSUFFIX'] = '.elf'
+
+
+env['CPPPATH'] = [
+                  '#src/sys',
+                  '#src/hal'
+                 ]
+
+env.Append(INSTALL_LIBDIR = './lib')
+env.Append(INSTALL_BINDIR = './bin')
+
+# compiler flags
+env.Append(CCFLAGS = [
+    '-mcpu=cortex-m4',
+    '-mfpu=fpv4-sp-d16',
+    '-mfloat-abi=softfp',
+    '-mthumb',
+    '-O2',
+    '-ffunction-sections',
+    '-fdata-sections',
+    '-std=gnu11',
+    '-MD',
+    '-std=c99',
+    '-Wall',
+    '-pedantic',
+    '-DPART_TM4C123GH6PM'
+    ])
+
+# linker flags
+env.Append(LINKFLAGS = [
+    '-ffunction-sections',
+    '-fdata-sections',
+    '-Tsrc/app/TM4C123GH6PM.ld',
+    '--entry=ResetISR',
+    '-Xlinker',
+    '--gc-sections',
+    '--specs=nano.specs',
+    ]) 
+
+env.Append(LIBPATH = ['#lib'])
+
+#Tivaware library
+#-------------------------------------------------------------
+env['TIVAWARE_PATH'] = '#src/tivaware'
+
+env.Append(LIBPATH = [
+    # libm -> the maths library
+    env['TIVAWARE_PATH'] + '/driverlib/gcc',
+])
+env.Append(LIBS = [
+    "driver",
+])
+
+env.Append(CPPPATH = [
+  env['TIVAWARE_PATH']
+])
+#-------------------------------------------------------------
+
+Export('env')
+
+BuildModules(['src'])
+

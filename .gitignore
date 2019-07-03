@@ -3,6 +3,7 @@ bin/*
 obj/*
 lib/*
 *.o
+*.d
 
 .sconsign.dblite
 .cproject

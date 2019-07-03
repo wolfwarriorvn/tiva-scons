@@ -1,0 +1,19 @@
+Import('env')
+
+appEnv = env.Clone()
+
+appEnv.Append(CPPPATH = [
+    '#src/app/',
+    ])
+
+demo = appEnv.Program(
+    target = 'demo',
+    source = [
+        'main.c',
+        'startup_gcc.c',
+        ],
+    LIBS = ['driver']
+    )
+    
+appEnv.Install('#bin/',appEnv.Objcopy(demo))
+
