@@ -4,6 +4,8 @@ obj/*
 lib/*
 *.o
 *.d
+*.elf
+*.bin
 
 .sconsign.dblite
 .cproject

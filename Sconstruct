@@ -48,6 +48,7 @@ env['PROGSUFFIX'] = '.elf'
 
 env['CPPPATH'] = [
                   '#src/sys',
+                  '#src/driver',
                   '#src/hal'
                  ]
 
@@ -68,7 +69,9 @@ env.Append(CCFLAGS = [
     '-std=c99',
     '-Wall',
     '-pedantic',
-    '-DPART_TM4C123GH6PM'
+    '-DPART_TM4C123GH6PM',
+    '-DUSE_FULL_ASSERT',
+    '-DDEBUG'
     ])
 
 # linker flags
@@ -79,7 +82,7 @@ env.Append(LINKFLAGS = [
     '--entry=ResetISR',
     '-Xlinker',
     '--gc-sections',
-    '--specs=nano.specs',
+    '--specs=nosys.specs',
     ]) 
 
 env.Append(LIBPATH = ['#lib'])
@@ -93,7 +96,7 @@ env.Append(LIBPATH = [
     env['TIVAWARE_PATH'] + '/driverlib/gcc',
 ])
 env.Append(LIBS = [
-    "driver",
+    "driver"
 ])
 
 env.Append(CPPPATH = [

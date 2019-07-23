@@ -1,8 +1,10 @@
 //*****************************************************************************
 //
-// startup_gcc.c - Startup code for use with GNU tools.
+// Startup code for use with TI's Code Composer Studio and GNU tools.
 //
-// Copyright (c) 2012 Texas Instruments Incorporated.  All rights reserved.
+// Copyright (c) 2011-2014 Texas Instruments Incorporated.  All rights reserved.
+// Software License Agreement
+// 
 // Software License Agreement
 //
 // Texas Instruments (TI) is supplying this software for use solely and
@@ -18,14 +20,9 @@
 // CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
 // DAMAGES, FOR ANY REASON WHATSOEVER.
 //
-// This is part of revision 9453 of the EK-LM4F120XL Firmware Package.
-//
 //*****************************************************************************
 
-#include <stdbool.h>
 #include <stdint.h>
-#include "inc/hw_nvic.h"
-#include "inc/hw_types.h"
 
 //*****************************************************************************
 //
@@ -36,6 +33,10 @@ void ResetISR(void);
 static void NmiSR(void);
 static void FaultISR(void);
 static void IntDefaultHandler(void);
+
+#ifndef HWREG
+#define HWREG(x) (*((volatile uint32_t *)(x)))
+#endif
 
 //*****************************************************************************
 //
@@ -49,19 +50,27 @@ extern int main(void);
 // Reserve space for the system stack.
 //
 //*****************************************************************************
-static unsigned long pulStack[64];
+static uint32_t pui32Stack[128];
+
+//*****************************************************************************
+//
+// External declarations for the interrupt handlers used by the application.
+//
+//*****************************************************************************
+// To be added by user
 
 //*****************************************************************************
 //
 // The vector table.  Note that the proper constructs must be placed on this to
-// ensure that it ends up at physical address 0x0000.0000.
+// ensure that it ends up at physical address 0x0000.0000 or at the start of
+// the program if located at a start address other than 0.
 //
 //*****************************************************************************
-__attribute__ ((section(".isr_vector")))
+__attribute__ ((section(".intvecs")))
 void (* const g_pfnVectors[])(void) =
 {
-    (void (*)(void))((unsigned long)pulStack + sizeof(pulStack)),
-					    // The initial stack pointer
+    (void (*)(void))((uint32_t)pui32Stack + sizeof(pui32Stack)),
+                                            // The initial stack pointer
     ResetISR,                               // The reset handler
     NmiSR,                                  // The NMI handler
     FaultISR,                               // The hard fault handler
@@ -118,8 +127,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Quadrature Encoder 1
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
-    IntDefaultHandler,                      // CAN2
-    IntDefaultHandler,                      // Ethernet
+    0,                                      // Reserved
+    0,                                      // Reserved
     IntDefaultHandler,                      // Hibernate
     IntDefaultHandler,                      // USB0
     IntDefaultHandler,                      // PWM Generator 3
@@ -129,8 +138,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // ADC1 Sequence 1
     IntDefaultHandler,                      // ADC1 Sequence 2
     IntDefaultHandler,                      // ADC1 Sequence 3
-    IntDefaultHandler,                      // I2S0
-    IntDefaultHandler,                      // External Bus Interface 0
+    0,                                      // Reserved
+    0,                                      // Reserved
     IntDefaultHandler,                      // GPIO Port J
     IntDefaultHandler,                      // GPIO Port K
     IntDefaultHandler,                      // GPIO Port L
@@ -184,14 +193,14 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Wide Timer 5 subtimer A
     IntDefaultHandler,                      // Wide Timer 5 subtimer B
     IntDefaultHandler,                      // FPU
-    IntDefaultHandler,                      // PECI 0
-    IntDefaultHandler,                      // LPC 0
+    0,                                      // Reserved
+    0,                                      // Reserved
     IntDefaultHandler,                      // I2C4 Master and Slave
     IntDefaultHandler,                      // I2C5 Master and Slave
     IntDefaultHandler,                      // GPIO Port M
     IntDefaultHandler,                      // GPIO Port N
     IntDefaultHandler,                      // Quadrature Encoder 2
-    IntDefaultHandler,                      // Fan 0
+    0,                                      // Reserved
     0,                                      // Reserved
     IntDefaultHandler,                      // GPIO Port P (Summary or P0)
     IntDefaultHandler,                      // GPIO Port P1
@@ -225,11 +234,11 @@ void (* const g_pfnVectors[])(void) =
 // for the "data" segment resides immediately following the "text" segment.
 //
 //*****************************************************************************
-extern unsigned long _etext;
-extern unsigned long _data;
-extern unsigned long _edata;
-extern unsigned long _bss;
-extern unsigned long _ebss;
+extern uint32_t __data_load__;
+extern uint32_t __data_start__;
+extern uint32_t __data_end__;
+extern uint32_t __bss_start__;
+extern uint32_t __bss_end__;
 
 //*****************************************************************************
 //
@@ -244,29 +253,29 @@ extern unsigned long _ebss;
 void
 ResetISR(void)
 {
-    unsigned long *pulSrc, *pulDest;
+    uint32_t *pui32Src, *pui32Dest;
 
     //
     // Copy the data segment initializers from flash to SRAM.
     //
-    pulSrc = &_etext;
-    for(pulDest = &_data; pulDest < &_edata; )
+    pui32Src = &__data_load__;
+    for(pui32Dest = &__data_start__; pui32Dest < &__data_end__; )
     {
-	*pulDest++ = *pulSrc++;
+        *pui32Dest++ = *pui32Src++;
     }
 
     //
     // Zero fill the bss segment.
     //
-    __asm("    ldr     r0, =_bss\n"
-	  "    ldr     r1, =_ebss\n"
-	  "    mov     r2, #0\n"
-	  "    .thumb_func\n"
-	  "zero_loop:\n"
-	  "        cmp     r0, r1\n"
-	  "        it      lt\n"
-	  "        strlt   r2, [r0], #4\n"
-	  "        blt     zero_loop");
+    __asm("    ldr     r0, =__bss_start__\n"
+          "    ldr     r1, =__bss_end__\n"
+          "    mov     r2, #0\n"
+          "    .thumb_func\n"
+          "zero_loop:\n"
+          "        cmp     r0, r1\n"
+          "        it      lt\n"
+          "        strlt   r2, [r0], #4\n"
+          "        blt     zero_loop");
 
     //
     // Enable the floating-point unit.  This must be done here to handle the
@@ -278,10 +287,8 @@ ResetISR(void)
     // Note that this does not use DriverLib since it might not be included in
     // this project.
     //
-    HWREG(NVIC_CPAC) = ((HWREG(NVIC_CPAC) &
-			 ~(NVIC_CPAC_CP10_M | NVIC_CPAC_CP11_M)) |
-			NVIC_CPAC_CP10_FULL | NVIC_CPAC_CP11_FULL);
-
+    HWREG(0xE000ED88) = ((HWREG(0xE000ED88) & ~0x00F00000) | 0x00F00000);
+    
     //
     // Call the application's entry point.
     //
