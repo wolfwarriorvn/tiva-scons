@@ -1,7 +1,0 @@
-Import('env')
-
-hal = env.StaticLibrary('hal',['hal_gpio.c',
-                                'hal_com.c'])
-
-env.Install('#lib/', hal)
-

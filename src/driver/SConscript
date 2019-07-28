@@ -1,6 +1,0 @@
-Import('env')
-
-drivers = env.StaticLibrary('drivers',['log.c', 'assert.c'])
-
-env.Install('#lib/', drivers)
-

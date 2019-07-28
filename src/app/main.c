@@ -7,12 +7,16 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/uart.h"
-#include "debug.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/timer.h"
 
 #include "hal_gpio.h"
 #include "hal_com.h"
+#include "hal_timer.h"
+#include "timer_test.h"
 #include "log.h"
 #include "assert.h"
+
 
 int main(void) {
 	
@@ -28,28 +32,15 @@ int main(void) {
     GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
 
-
     log_init();
     log_print("Hello Embedded!!!");
 
-    hal_gpio_t Led1 = {
-        .port       = GPIO_PORTF,
-        .pin        = GPIO_PIN3,
-        .direction  = GPIO_DIR_OUT,
-    };
-    hal_gpio_init(&Led1);
+    /* Timer test: Toggle the red led in duration*/
+    timer_test_start();
 
-    logs("Debug");
 
     while(1)
     {
-        // GPIOPinWrite(
-        hal_gpio_set_high(&Led1);
-        // hal_gpio_set_high(&Led2);
-        // hal_gpio_set_high(&Led1);
-        SysCtlDelay(2000000);
-        hal_gpio_set_low(&Led1);
-        SysCtlDelay(2000000);
     }
 
 }

@@ -10,9 +10,8 @@ demo = appEnv.Program(
     target = 'demo',
     source = [
         'main.c',
-        'startup_gcc.c',
         ],
-    LIBS = ['driver', 'drivers', 'hal']
+    LIBS = ['stelaris','driver']
     )
     
 appEnv.Install('#bin/',appEnv.Objcopy(demo))

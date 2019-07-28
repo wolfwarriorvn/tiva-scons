@@ -47,9 +47,9 @@ env['PROGSUFFIX'] = '.elf'
 
 
 env['CPPPATH'] = [
-                  '#src/sys',
-                  '#src/driver',
-                  '#src/hal'
+                  '#src/platform/common',
+                  '#src/platform/driver',
+                  '#src/platform/hal'
                  ]
 
 env.Append(INSTALL_LIBDIR = './lib')
@@ -78,7 +78,7 @@ env.Append(CCFLAGS = [
 env.Append(LINKFLAGS = [
     '-ffunction-sections',
     '-fdata-sections',
-    '-Tsrc/app/TM4C123GH6PM.ld',
+    '-Tsrc/platform/startup/TM4C123GH6PM.ld',
     '--entry=ResetISR',
     '-Xlinker',
     '--gc-sections',

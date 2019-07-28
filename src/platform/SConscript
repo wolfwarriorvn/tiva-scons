@@ -1,0 +1,14 @@
+Import('env')
+
+src = [
+  'startup/startup_gcc.c',
+  'hal/hal_gpio.c',
+  'hal/hal_timer.c',
+  'hal/hal_com.c',
+  'driver/log.c',
+  'driver/timer_test.c',
+  'common/assert.c'
+]
+
+stelaris = env.StaticLibrary('stelaris', source=src)
+env.Install('#lib/', stelaris)

@@ -1,7 +1,6 @@
 Import('env')
 
 env.BuildModules([
-                    'hal',
-                    'driver',
+                    'platform',
                     'app'
                  ])
